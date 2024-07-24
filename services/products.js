@@ -1,0 +1,164 @@
+const {Bitrix} = require("@2bad/bitrix")
+const {logError} = require("../logger/logger");
+
+class ProductsService {
+    bx = null;
+
+    constructor(link) {
+        this.bx = Bitrix(link);
+    }
+
+    async fetchProducts(iblockId) {
+        try {
+            let data = [];
+            const crmProducts = await this.getCrmProducts();
+            const offers = await this.fetchOffers(iblockId);
+            if (offers.length > 0) {
+                return offers.map(offer => {
+                    const product = crmProducts.find(product => product.ID.toString() === offer.parentId.value.toString());
+                    return {
+                        ID: product.ID.toString(),
+                        OFFER_ID: offer.id.toString(),
+                        NAME: product ? product.NAME : null,
+                        QUANTITY: offer.quantity || 0
+                    };
+                });
+            } else {
+                const quantities = await this.getQuantities();
+                crmProducts.forEach((product) => {
+                    const quantity = quantities.find((quantity) => quantity.productId.toString() === product.ID.toString());
+                    if (quantity) {
+                        data.push({
+                            ID: product.ID.toString(),
+                            NAME: product.NAME.toString(),
+                            QUANTITY: quantity.amount ? quantity.amount.toString() : 0 || 0,
+                        });
+                    } else {
+                        data.push({
+                            ID: product.ID.toString(),
+                            NAME: product.NAME.toString(),
+                            QUANTITY: 0,
+                        });
+                    }
+                })
+            }
+            return data;
+        } catch (error) {
+            logError("PRODUCTS SERVICE fetchProducts", error)
+        }
+    }
+
+    async getCrmProducts() {
+        let products = [];
+        let start = 0;
+        const batchSize = 50;
+        let fetchedCount = 0;
+        let total = 999999;
+
+        try {
+            while (fetchedCount < total) {
+                const response = await this.bx.call("crm.product.list", {
+                    select: ["*"],
+                    start: start
+                });
+                response?.result?.forEach(product => {
+                    products.push( { "ID": product.ID, "NAME": product.NAME } )
+                })
+
+                if (!response.result || response.result.length === 0 || response.next === undefined) {
+                    break; // Если больше нет товаров, завершаем цикл
+                }
+                fetchedCount += response.result.length;
+                // Увеличиваем смещение для следующей порции товаров
+                start += batchSize;
+                total = response.total;
+            }
+            return products;
+        } catch (error) {
+            logError("PRODUCTS SERVICE getCrmProducts", error);
+            return null;
+        }
+    }
+
+    async fetchOffers(iblockId) {
+        let offers = [];
+        let fetchedCount = 0;
+        let start = 0;
+        const batchSize = 50;
+        let total = 999999;
+
+        try {
+            while (fetchedCount < total) {
+                const response = await this.bx.call("catalog.product.offer.list", {
+                    select: ["id", "iblockId", "parentId", "quantity"],
+                    filter: { iblockId: iblockId },
+                    start: start
+                });
+                if (!response.result || response.result.offers.length === 0) {
+                    break; // Если больше нет предложений, завершаем цикл
+                }
+
+                offers = offers.concat(response.result.offers);
+                fetchedCount += response.result.offers.length;
+                // Увеличиваем смещение для следующей порции предложений
+                start += batchSize;
+                total = response.total;
+            }
+
+            return offers;
+        } catch (error) {
+            logError("PRODUCT SERVICE getOffers", error);
+            return null;
+        }
+    }
+
+    async getOffersCatalogId(iblocks) {
+        try {
+            const offersCatalogIdArray = await Promise.all(iblocks.map(async (iblock) => {
+                const result = await this.bx.call("catalog.catalog.isOffers", { id: iblock.id });
+                if (result.result) {
+                    return iblock.id;
+                }
+                return null;
+            }));
+
+            // Фильтруем null значения, чтобы получить только действительные ID инфоблоков
+            const offersCatalogId = offersCatalogIdArray.filter(id => id !== null);
+
+            // Если нужно вернуть только первый найденный ID
+            return offersCatalogId.length > 0 ? offersCatalogId[0] : null;
+        } catch (error) {
+            logError("PRODUCT SERVICE getOffersCatalogId", error)
+            return null;
+        }
+
+    }
+
+    async getIblocksList() {
+        try {
+            return (await this.bx.call("catalog.catalog.list", {
+                select: ["*"]
+            })).result.catalogs;
+        } catch (error) {
+            logError("PRODUCT SERVICE getIblocksList", error);
+            return null;
+        }
+    }
+
+    async getQuantities() {
+        try {
+            // catalog.storeproduct.list
+            return (await this.bx.call("catalog.storeproduct.list", {
+                select: ["*"],
+                filter: { storeId: 2 }
+            })).result.storeProducts;
+        } catch (error) {
+            logError("PRODUCT SERVICE getIblocksList", error);
+            return null;
+        }
+    }
+}
+
+
+
+module.exports= { ProductsService };
