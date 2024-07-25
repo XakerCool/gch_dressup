@@ -22,7 +22,7 @@ const bx = Bitrix(link);
 
 
 app.use(cors({
-    origin: "https://cdn-ru.bitrix24.ru",
+    origin: "*",
     credentials: true
 }));
 app.use(bodyParser.json());
