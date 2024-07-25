@@ -41,6 +41,7 @@ app.get("/dressup/get_goods", async (req, res) => {
 
         const rawProducts = await productService.fetchProducts(offersCatalogId);
 
+
         const dealsWithProductRows = await dealsService.getDealsWithProductrows();
 
         const contacts = await contactsService.getAllContacts();
@@ -78,6 +79,17 @@ app.get("/dressup/get_goods", async (req, res) => {
         res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"});
     }
 });
+
+app.get("/dressup/get_sections/", async (req, res) => {
+    try {
+        const productService = new ProductsService(link);
+        const sections = await productService.getSections()
+        res.status(200).json({"status": true, "status_msg": "success", "sections": sections});
+    } catch (error) {
+        logError("/dressup/get_sections/", error);
+        res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
+    }
+})
 
 app.post("/dressup/get_product_pictures/", async (req, res) => {
     try {

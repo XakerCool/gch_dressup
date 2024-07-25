@@ -20,6 +20,7 @@ class ProductsService {
                         ID: product.ID.toString(),
                         OFFER_ID: offer.id.toString(),
                         NAME: product ? product.NAME : null,
+                        SECTION_ID: product ? product.SECTION_ID.toString() : null,
                         QUANTITY: offer.quantity || 0
                     };
                 });
@@ -32,12 +33,14 @@ class ProductsService {
                             ID: product.ID.toString(),
                             NAME: product.NAME.toString(),
                             QUANTITY: quantity.amount ? quantity.amount.toString() : 0 || 0,
+                            SECTION_ID: product.SECTION_ID.toString(),
                         });
                     } else {
                         data.push({
                             ID: product.ID.toString(),
                             NAME: product.NAME.toString(),
                             QUANTITY: 0,
+                            SECTION_ID: product.SECTION_ID.toString(),
                         });
                     }
                 })
@@ -62,7 +65,7 @@ class ProductsService {
                     start: start
                 });
                 response?.result?.forEach(product => {
-                    products.push( { "ID": product.ID, "NAME": product.NAME } )
+                    products.push( { "ID": product.ID, "NAME": product.NAME, "SECTION_ID": product.SECTION_ID } )
                 })
 
                 if (!response.result || response.result.length === 0 || response.next === undefined) {
@@ -165,6 +168,19 @@ class ProductsService {
             }).catch(error => logError("PRODUCT SERVICE getPictures catalog.productImage.list", error))).result.productImages;
         } catch (error) {
             logError("PRODUCT SERVICE getPictures", error);
+            return null;
+        }
+    }
+
+    async getSections() {
+        try {
+            return (await this.bx.call("crm.productsection.list",
+                {
+                    select: ["ID", "CATALOG_ID", "NAME"]
+                }
+            )).result;
+        } catch (error) {
+            logError("PRODUCT SERVICE getSections", error);
             return null;
         }
     }
