@@ -79,7 +79,7 @@ app.get("/dressup/get_goods", async (req, res) => {
     }
 });
 
-app.get("/dressup/get_product_pictures/", async (req, res) => {
+app.post("/dressup/get_product_pictures/", async (req, res) => {
     try {
         const raw = req.body;
         const productService = new ProductsService(link);
