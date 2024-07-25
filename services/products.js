@@ -157,6 +157,17 @@ class ProductsService {
             return null;
         }
     }
+
+    async getPictures(productId) {
+        try {
+            return (await this.bx.call("catalog.productImage.list", {
+                productId: productId
+            }).catch(error => logError("PRODUCT SERVICE getPictures catalog.productImage.list", error))).result.productImages;
+        } catch (error) {
+            logError("PRODUCT SERVICE getPictures", error);
+            return null;
+        }
+    }
 }
 
 

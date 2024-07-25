@@ -79,6 +79,17 @@ app.get("/dressup/get_goods", async (req, res) => {
     }
 });
 
+app.get("/dressup/get_product_pictures/", async (req, res) => {
+    try {
+        const raw = req.body;
+        const productService = new ProductsService(link);
+        const pictures = (await productService.getPictures(parseInt(raw.product_id))).map(picture => picture.detailUrl);
+        res.status(200).json({"status": true, "status_msg": "success", "pictures": pictures})
+    } catch (error) {
+        logError("/dressup/get_product_pictures/", error);
+        res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
+    }
+})
 
 app.get("/dressup/get_quantities", async (req, res) => {
     try {
