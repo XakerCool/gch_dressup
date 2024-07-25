@@ -21,7 +21,8 @@ class ProductsService {
                         OFFER_ID: offer.id.toString(),
                         NAME: product ? product.NAME : null,
                         SECTION_ID: product ? product.SECTION_ID.toString() : null,
-                        QUANTITY: offer.quantity || 0
+                        QUANTITY: offer.quantity || 0,
+                        DESCRIPTION: product ? product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание" : "Тут будет описание"
                     };
                 });
             } else {
@@ -34,6 +35,7 @@ class ProductsService {
                             NAME: product.NAME.toString(),
                             QUANTITY: quantity.amount ? quantity.amount.toString() : 0 || 0,
                             SECTION_ID: product.SECTION_ID.toString(),
+                            DESCRIPTION: product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание"
                         });
                     } else {
                         data.push({
@@ -41,6 +43,7 @@ class ProductsService {
                             NAME: product.NAME.toString(),
                             QUANTITY: 0,
                             SECTION_ID: product.SECTION_ID.toString(),
+                            DESCRIPTION: product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание"
                         });
                     }
                 })
