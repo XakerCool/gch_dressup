@@ -172,6 +172,19 @@ class DealsService {
         })
     }
 
+    // Получить список воронок
+    async getDealCategories() {
+        try {
+            let categories = (await this.bx.call("crm.dealcategory.list")).result;
+            const defaultCategory = (await this.bx.call("crm.dealcategory.default.get")).result;
+            categories.push({"ID": defaultCategory.ID, "NAME": defaultCategory.NAME});
+            categories = categories.map(category => { return { "ID": category.ID, "NAME": category.NAME } })
+            return categories;
+        } catch (error) {
+            logError("DEALS SERVICE getDealCategories", error)
+            return null;
+        }
+    }
 }
 
 var date2str = function(d)

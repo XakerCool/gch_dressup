@@ -10,6 +10,7 @@ const {logError} = require("./logger/logger");
 const { ProductsService } = require("./services/products");
 const { DealsService } = require("./services/deals");
 const { ContactsService } = require("./services/contacts");
+const e = require("express");
 
 const envPath = path.join(__dirname, '.env');
 dotenv.config({ path: envPath });
@@ -168,10 +169,21 @@ app.post("/dressup/create_contact", async (req ,res) => {
     }
 })
 
+app.get("/dressup/get_deal_categories/", async (req, res) => {
+    try {
+        const dealService = new DealsService(link);
+        const categories = await dealService.getDealCategories();
+        res.status(200).json({"status": true, "status_msg": "success", "categories": categories});
+    } catch (error) {
+        logError("/dressup/get_deal_categories/", error);
+        res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
+    }
+})
+
 app.get("/dressup/tmp", async (req, res) => {
     const dealService = new DealsService(link);
-    await dealService.getDealsUserFields();
-    res.status(200)
+    const categories = await dealService.getDealCategories();
+    res.status(200).json({"status": true, "status_msg": "success", "categories": categories});
 })
 
 app.listen(PORT, () => {
