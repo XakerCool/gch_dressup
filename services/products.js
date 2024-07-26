@@ -8,11 +8,23 @@ class ProductsService {
         this.bx = Bitrix(link);
     }
 
-    async fetchProducts(iblockId) {
+    async fetchProducts(iblockId, city = null) {
         try {
             let data = [];
-            const crmProducts = await this.getCrmProducts();
+            let crmProducts = null;
+            const cityUserField = await this.getCityUserField();
+            if (city) {
+                const valueId = cityUserField.values.find(value => value.VALUE.toString().toLowerCase() === city.toString().toLowerCase() ? value.ID : null);
+                if (valueId) {
+                    crmProducts = await this.getCrmProducts(valueId, cityUserField.key);
+                }
+            } else {
+                crmProducts = await this.getCrmProducts();
+            }
+
             const offers = await this.fetchOffers(iblockId);
+
+
             if (offers.length > 0) {
                 return offers.map(offer => {
                     const product = crmProducts.find(product => product.ID.toString() === offer.parentId.value.toString());
@@ -51,10 +63,11 @@ class ProductsService {
             return data;
         } catch (error) {
             logError("PRODUCTS SERVICE fetchProducts", error)
+            return null;
         }
     }
 
-    async getCrmProducts() {
+    async getCrmProducts(valueId = null, key= null) {
         let products = [];
         let start = 0;
         const batchSize = 50;
@@ -63,10 +76,22 @@ class ProductsService {
 
         try {
             while (fetchedCount < total) {
-                const response = await this.bx.call("crm.product.list", {
-                    select: ["*"],
-                    start: start
-                });
+                let response = null;
+                if (valueId && key) {
+                    response = await this.bx.call("crm.product.list", {
+                        select: ["*"],
+                        filter: {
+                            [key]: valueId
+                        },
+                        start: start
+                    });
+                } else {
+                    response = await this.bx.call("crm.product.list", {
+                        select: ["*"],
+                        start: start
+                    });
+                }
+
                 response?.result?.forEach(product => {
                     products.push( { "ID": product.ID, "NAME": product.NAME, "SECTION_ID": product.SECTION_ID } )
                 })
@@ -82,6 +107,19 @@ class ProductsService {
             return products;
         } catch (error) {
             logError("PRODUCTS SERVICE getCrmProducts", error);
+            return null;
+        }
+    }
+
+    async getCrmProductsWithDetails(products) {
+        try {
+            const promises = await products.map(async product => {
+                return (await this.bx.call("crm.product.get", {id: product.ID})).result;
+            })
+
+            return await Promise.all(promises);
+        } catch (error) {
+            logError("PRODUCTS SERVICE getCrmProductsWithDetails", error);
             return null;
         }
     }
@@ -184,6 +222,26 @@ class ProductsService {
             )).result;
         } catch (error) {
             logError("PRODUCT SERVICE getSections", error);
+            return null;
+        }
+    }
+
+    async getCityUserField() {
+        try {
+            const res = (await this.bx.call("crm.product.fields")).result;
+            for (let key in res) {
+                if (res.hasOwnProperty(key) && res[key].title.toString().toLowerCase() === "город") {
+                    let values = [];
+                    for (let k in res[key].values) {
+                        if (res[key].values.hasOwnProperty(k)) {
+                            values.push(res[key].values[k]);
+                        }
+                    }
+                    return {key: key, values: values};
+                }
+            }
+        } catch (error) {
+            logError("PRODUCT SERVICE getCityUserField", error)
             return null;
         }
     }

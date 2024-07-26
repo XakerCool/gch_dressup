@@ -31,8 +31,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(timeout('20m'));
 
-app.get("/dressup/get_goods", async (req, res) => {
+app.post("/dressup/get_goods", async (req, res) => {
     try {
+        const raw = req.body;
+
         const productService = new ProductsService(link);
         const dealsService = new DealsService(link);
         const contactsService = new ContactsService(link);
@@ -40,8 +42,12 @@ app.get("/dressup/get_goods", async (req, res) => {
         const iblocks = await productService.getIblocksList();
         const offersCatalogId = await productService.getOffersCatalogId(iblocks);
 
-        const rawProducts = await productService.fetchProducts(offersCatalogId);
-
+        let rawProducts = null;
+        if (raw && raw.city) {
+            rawProducts = await productService.fetchProducts(offersCatalogId, raw.city);
+        } else {
+            rawProducts = await productService.fetchProducts(offersCatalogId);
+        }
 
         const dealsWithProductRows = await dealsService.getDealsWithProductrows();
 
@@ -180,10 +186,21 @@ app.get("/dressup/get_deal_categories/", async (req, res) => {
     }
 })
 
+app.get("/dressup/get_cities/", async (req, res) => {
+    try {
+        const productService = new ProductsService(link);
+        const cities = await productService.getCityUserField();
+        res.status(200).json({"status": true, "status_msg": "success", "cities": cities.values.map(city => city.VALUE)});
+    } catch (error) {
+        logError("/dressup/get_cities/", error);
+        res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
+    }
+})
+
 app.get("/dressup/tmp", async (req, res) => {
-    const dealService = new DealsService(link);
-    const categories = await dealService.getDealCategories();
-    res.status(200).json({"status": true, "status_msg": "success", "categories": categories});
+    const productService = new ProductsService(link);
+    const userFields = await productService.getCityUserField();
+    res.status(200).json({"status": true, "status_msg": "success", "userFields": userFields});
 })
 
 app.listen(PORT, () => {
