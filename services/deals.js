@@ -51,7 +51,7 @@ class DealsService {
         }
     }
 
-    async createDeal(title, contact_id, dateFrom, dateTo, weddingDate, prepayment, postpayment) {
+    async createDeal(title, contact_id, dateFrom, dateTo, weddingDate, prepayment, postpayment, category_id) {
         try {
             const userFields = await this.getDealsUserFields();
             const weddingDateField = userFields.find(uf => uf.hasOwnProperty("Дата свадьбы"));
@@ -72,7 +72,7 @@ class DealsService {
                         [weddingDateFieldTitle]: weddingDate,
                         [prepaymentFieldTitle]: prepayment,
                         [postpaymentFieldTitle]: postpayment,
-                        "CATEGORY_ID": 0,
+                        "CATEGORY_ID": category_id,
                     }
                 }
             )).result;

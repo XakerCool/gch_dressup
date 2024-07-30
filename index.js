@@ -136,7 +136,7 @@ app.post("/dressup/create_deal", async (req, res) => {
     try {
         const raw = req.body;
         const dealsService = new DealsService(link)
-        const dealId = await dealsService.createDeal(raw.title, raw.contact_id, raw.dateFrom, raw.dateTo, raw.weddingDate, raw.prepayment, raw.postpayment)
+        const dealId = await dealsService.createDeal(raw.title, raw.contact_id, raw.dateFrom, raw.dateTo, raw.weddingDate, raw.prepayment, raw.postpayment, raw.category_id)
         if (dealId) {
             const isProductsAdded = await dealsService.addProductsToDeal(dealId, raw.products);
 
