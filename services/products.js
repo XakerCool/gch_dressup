@@ -14,7 +14,7 @@ class ProductsService {
             let crmProducts = null;
             const cityUserField = await this.getCityUserField();
             if (city) {
-                const valueId = cityUserField.values.find(value => value.VALUE.toString().toLowerCase() === city.toString().toLowerCase() ? value.ID : null);
+                const valueId = cityUserField.values.find(value => value.VALUE.toString().toLowerCase() === city.toString().toLowerCase()).ID;
                 if (valueId) {
                     crmProducts = await this.getCrmProducts(valueId, cityUserField.key);
                 }
