@@ -22,7 +22,6 @@ const link = process.env.BX_LINK;
 
 app.use(cors({
     origin: "*",
-    credentials: true
 }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
