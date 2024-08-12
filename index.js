@@ -414,12 +414,31 @@ app.post("/dressup/delete_product/", async (req, res) => {
     }
 })
 
+app.post("/dressup/update_product/", async (req, res) => {
+    try {
+        const updatingProductId = req.body.data.FIELDS.ID;
+
+        const productService = new ProductsService(link);
+        const product = await productService.getCrmProduct(updatingProductId);
+        let db = dbAstana;
+        await db.updateProductInDb(updatingProductId, product);
+        db = dbKaraganda;
+        await db.updateProductInDb(updatingProductId, product);
+
+        logSuccess("/dressup/delete_product/", `Товар ${updatingProductId} успешно обновлен`)
+        res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${updatingProductId} успешно удален`});
+    } catch (error) {
+        logError("/dressup/delete_product/", error);
+        res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
+    }
+})
+
 app.get("/dressup/tmp", async (req, res) => {
     let db = dbAstana;
-    await db.deleteProductFromDb(8429);
+    await db.deleteProductFromDb(8433);
     db = dbKaraganda;
-    await db.deleteProductFromDb(8429);
-    res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${8409} успешно удален`});
+    await db.deleteProductFromDb(8433);
+    res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${8433} успешно удален`});
 })
 
 

@@ -342,6 +342,33 @@ class Db {
         }
     }
 
+    async updateProductInDb(productId, product) {
+        const db = new sqlite3.Database(this.dbPath);
+        try {
+            return new Promise((resolve, reject) => {
+                db.run(
+                    `UPDATE dresses SET name = ?, description = ?, section_id = ? WHERE id = ?`,
+                    [product.NAME, product.DESCRIPTION, product.SECTION_ID, productId],
+                    function(err) {
+                        if (err) {
+                            logError("DB SERVICE updateProductInDb", err);
+                            reject(err);
+                        } else if (this.changes === 0) {
+                            resolve(false);
+                        } else {
+                            resolve(true);
+                        }
+                    }
+                );
+            });
+        } catch (error) {
+            logError("DB SERVICE updateProductInDb", error);
+            return null;
+        } finally {
+            db.close();
+        }
+    }
+
 }
 
 module.exports = Db;
