@@ -116,7 +116,7 @@ app.post("/dressup/get_goods_from_db_and_new_goods", async (req, res) => {
 
         const productsFromDb = await db.getProductsAndDeals(raw.city);
 
-        rawProducts.push([...productsFromDb]);
+        rawProducts.push(...productsFromDb);
 
         res.status(200).json({ "status": true, "status_msg": "success", "products": rawProducts });
     } catch (error) {
