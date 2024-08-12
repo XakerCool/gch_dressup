@@ -397,11 +397,31 @@ app.get("/dressup/get_cities/", async (req, res) => {
     }
 })
 
-app.get("/dressup/tmp", async (req, res) => {
-    const productService = new ProductsService(link);
-    const userFields = await productService.getCityUserField();
-    res.status(200).json({"status": true, "status_msg": "success", "userFields": userFields});
+app.post("/dressup/delete_product/", async (req, res) => {
+    try {
+        const deletingProductId = req.body.data.FIELDS.ID;
+
+        let db = dbAstana;
+        await db.deleteProductFromDb(deletingProductId);
+        db = dbKaraganda;
+        await db.deleteProductFromDb(deletingProductId);
+
+        res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${deletingProductId} успешно удален`});
+    } catch (error) {
+        logError("/dressup/delete_product/", error);
+        res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
+    }
 })
+
+app.get("/dressup/tmp", async (req, res) => {
+    let db = dbAstana;
+    await db.deleteProductFromDb(8409);
+    db = dbKaraganda;
+    await db.deleteProductFromDb(8409);
+    res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${8409} успешно удален`});
+})
+
+
 
 app.listen(PORT, () => {
     console.log(`Сервер запущен на порту ${PORT}`);

@@ -319,6 +319,27 @@ class Db {
         }
     }
 
+    async deleteProductFromDb(productId) {
+        const db = new sqlite3.Database(this.dbPath);
+        try {
+            return new Promise((resolve, reject) => {
+                db.run(`DELETE FROM dresses WHERE id = ?`, [productId], function(err) {
+                    if (err) {
+                        logError("DB SERVICE deleteProductFromDb", err);
+                        reject(err);
+                    } else {
+                        resolve({ success: true, message: `Product with ID ${productId} has been deleted.` });
+                    }
+                });
+            });
+        } catch (error) {
+            logError("DB SERVICE deleteProductFromDb", error);
+            return null;
+        } finally {
+            db.close();
+        }
+    }
+
 }
 
 module.exports = Db;

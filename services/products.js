@@ -22,44 +22,15 @@ class ProductsService {
                 crmProducts = await this.getCrmProducts();
             }
 
-            const offers = await this.fetchOffers(iblockId);
-
-
-            if (offers.length > 0) {
-                return offers.map(offer => {
-                    const product = crmProducts.find(product => product.ID.toString() === offer.parentId.value.toString());
-                    return {
-                        ID: product.ID.toString(),
-                        OFFER_ID: offer.id.toString(),
-                        NAME: product ? product.NAME : null,
-                        SECTION_ID: product ? product.SECTION_ID.toString() : null,
-                        QUANTITY: offer.quantity || 0,
-                        DESCRIPTION: product ? product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание" : "Тут будет описание"
-                    };
+            crmProducts.forEach((product) => {
+                data.push({
+                    ID: product.ID.toString(),
+                    NAME: product.NAME.toString(),
+                    QUANTITY: 0,
+                    SECTION_ID: product.SECTION_ID.toString(),
+                    DESCRIPTION: product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание"
                 });
-            } else {
-                const quantities = await this.getQuantities();
-                crmProducts.forEach((product) => {
-                    const quantity = quantities.find((quantity) => quantity.productId.toString() === product.ID.toString());
-                    if (quantity) {
-                        data.push({
-                            ID: product.ID.toString(),
-                            NAME: product.NAME.toString(),
-                            QUANTITY: quantity.amount ? quantity.amount.toString() : 0 || 0,
-                            SECTION_ID: product.SECTION_ID.toString(),
-                            DESCRIPTION: product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание"
-                        });
-                    } else {
-                        data.push({
-                            ID: product.ID.toString(),
-                            NAME: product.NAME.toString(),
-                            QUANTITY: 0,
-                            SECTION_ID: product.SECTION_ID.toString(),
-                            DESCRIPTION: product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание"
-                        });
-                    }
-                })
-            }
+            })
             return data;
         } catch (error) {
             logError("PRODUCTS SERVICE fetchProducts", error)
@@ -81,44 +52,15 @@ class ProductsService {
                 crmProducts = await this.getCrmProducts();
             }
 
-            const offers = await this.fetchOffersFromId(startId, iblockId);
-
-
-            if (offers.length > 0) {
-                return offers.map(offer => {
-                    const product = crmProducts.find(product => product.ID.toString() === offer.parentId.value.toString());
-                    return {
-                        ID: product.ID.toString(),
-                        OFFER_ID: offer.id.toString(),
-                        NAME: product ? product.NAME : null,
-                        SECTION_ID: product ? product.SECTION_ID.toString() : null,
-                        QUANTITY: offer.quantity || 0,
-                        DESCRIPTION: product ? product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание" : "Тут будет описание"
-                    };
+            crmProducts.forEach((product) => {
+                data.push({
+                    ID: product.ID.toString(),
+                    NAME: product.NAME.toString(),
+                    QUANTITY: 0,
+                    SECTION_ID: product.SECTION_ID.toString(),
+                    DESCRIPTION: product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание"
                 });
-            } else {
-                const quantities = await this.getQuantities();
-                crmProducts.forEach((product) => {
-                    const quantity = quantities.find((quantity) => quantity.productId.toString() === product.ID.toString());
-                    if (quantity) {
-                        data.push({
-                            ID: product.ID.toString(),
-                            NAME: product.NAME.toString(),
-                            QUANTITY: quantity.amount ? quantity.amount.toString() : 0 || 0,
-                            SECTION_ID: product.SECTION_ID.toString(),
-                            DESCRIPTION: product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание"
-                        });
-                    } else {
-                        data.push({
-                            ID: product.ID.toString(),
-                            NAME: product.NAME.toString(),
-                            QUANTITY: 0,
-                            SECTION_ID: product.SECTION_ID.toString(),
-                            DESCRIPTION: product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание"
-                        });
-                    }
-                })
-            }
+            })
             return data;
         } catch (error) {
             logError("PRODUCTS SERVICE fetchProducts", error)
@@ -197,7 +139,7 @@ class ProductsService {
                 }
 
                 response?.result?.forEach(product => {
-                    products.push( { "ID": product.ID, "NAME": product.NAME, "SECTION_ID": product.SECTION_ID } )
+                    products.push( { "ID": product.ID, "NAME": product.NAME, "SECTION_ID": product.SECTION_ID, "DESCRIPTION": product.DESCRIPTION } )
                 })
 
                 if (!response.result || response.result.length === 0 || response.next === undefined) {
