@@ -157,6 +157,24 @@ class ProductsService {
         }
     }
 
+    async getCrmProduct(productId) {
+        try {
+            return new Promise(async (resolve, reject) => {
+                const product = (await this.bx.call("crm.product.get", {id: productId})).result;
+                resolve({
+                    ID: product.ID,
+                    NAME: product.NAME,
+                    DESCRIPTION: product.DESCRIPTION,
+                    QUANTITY: 0,
+                    SECTION_ID: product.SECTION_ID
+                })
+            })
+        } catch (error) {
+            logError("PRODUCTS SERVICE getCrmProducts", error);
+            return null;
+        }
+    }
+
     async getCrmProductsWithDetails(products) {
         try {
             const promises = await products.map(async product => {
