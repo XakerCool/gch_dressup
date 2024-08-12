@@ -138,6 +138,73 @@ class DealsService {
         }
     }
 
+    async getDealsWithProductrowsFromId(startId) {
+        try {
+            // Fetch all deals
+            const deals = await this.getAllDealsFromId(startId);
+            const userFields = await this.getDealsUserFields();
+            const weddingDateField = userFields.find(uf => uf.hasOwnProperty("Дата свадьбы"));
+
+            const weddingDateFieldTitle = weddingDateField ? weddingDateField["Дата свадьбы"] : null;
+
+            // Fetch product rows for each deal
+            return await Promise.all(
+                deals.map(async deal => {
+                    const fullDealInf = (await this.bx.deals.get(deal.ID)).result;
+                    const productRows = (await this.bx.call("crm.deal.productrows.get", {id: deal.ID})).result;
+                    return {
+                        id: fullDealInf.ID,
+                        title: fullDealInf.TITLE,
+                        stage_id: fullDealInf.STAGE_ID,
+                        begin_date: fullDealInf.BEGINDATE,
+                        close_date: fullDealInf.CLOSEDATE,
+                        contact_id: fullDealInf.CONTACT_ID,
+                        productRows: productRows, // Use consistent property name 'productRows',
+                        wedding_date: fullDealInf[weddingDateFieldTitle]
+                    };
+                })
+            );
+        } catch (error) {
+            logError("DEALS SERVICE getDealsWithProductrows", error);
+            return null;
+        }
+    }
+
+    async getAllDealsFromId(startId) {
+        return new Promise(async (resolve, reject) => {
+            const pageSize = 50; // Number of contacts to fetch per request
+            let allDeals = []; // Array to store all contacts
+
+            let start = 0;
+            let total = 0;
+
+            try {
+                do {
+                    const data = await this.bx.deals.list({
+                        select: ["*"],
+                        filter: {
+                            "!=STAGE_ID": "PREPAYMENT_INVOICE",
+                            ">ID": startId
+                        }
+                    })
+                    if (data && data.result) {
+                        allDeals = [...allDeals, ...data.result];
+                        total = data.total;
+                        start += pageSize;
+                    } else {
+                        break; // Exit the loop if no more data or unexpected response structure
+                    }
+
+                } while(start < total);
+
+                resolve(allDeals);
+            } catch (error) {
+                logError("DEALS SERVICE getAllDealsService", error);
+                reject(null);
+            }
+        })
+    }
+
     async getAllDeals() {
         return new Promise(async (resolve, reject) => {
             const pageSize = 50; // Number of contacts to fetch per request

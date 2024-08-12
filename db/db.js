@@ -256,6 +256,68 @@ class Db {
         }
     }
 
+    async getMaxProductIdFromDb() {
+        const db = new sqlite3.Database(this.dbPath);
+        try {
+            return new Promise((resolve, reject) => {
+                db.get(`SELECT MAX(CAST(id AS INTEGER)) AS maxId FROM dresses`, [], (err, row) => {
+                    if (err) {
+                        logError("DB SERVICE getMaxProductIdFromDb", err);
+                        reject(err);
+                    } else {
+                        resolve(row.maxId);
+                    }
+                });
+            });
+        } catch (error) {
+            logError("DB SERVICE getMaxProductIdFromDb", error);
+            return null;
+        } finally {
+            db.close();
+        }
+    }
+
+    async getMaxDealIdFromDb() {
+        const db = new sqlite3.Database(this.dbPath);
+        try {
+            return new Promise((resolve, reject) => {
+                db.get(`SELECT MAX(CAST(id AS INTEGER)) AS maxId FROM deals`, [], (err, row) => {
+                    if (err) {
+                        logError("DB SERVICE getMaxProductIdFromDb", err);
+                        reject(err);
+                    } else {
+                        resolve(row.maxId);
+                    }
+                });
+            })
+        } catch (error) {
+            logError("DB SERVICE getMaxProductIdFromDb", error);
+            return null;
+        } finally {
+            db.close();
+        }
+    }
+
+    async getMaxContactIdFromDb() {
+        const db = new sqlite3.Database(this.dbPath);
+        try {
+            return new Promise((resolve, reject) => {
+                db.get(`SELECT MAX(CAST(id AS INTEGER)) AS maxId FROM contacts`, [], (err, row) => {
+                    if (err) {
+                        logError("DB SERVICE getMaxProductIdFromDb", err);
+                        reject(err);
+                    } else {
+                        resolve(row.maxId);
+                    }
+                });
+            })
+        } catch (error) {
+            logError("DB SERVICE getMaxProductIdFromDb", error);
+            return null;
+        } finally {
+            db.close();
+        }
+    }
 
 }
 

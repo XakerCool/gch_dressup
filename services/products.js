@@ -67,6 +67,110 @@ class ProductsService {
         }
     }
 
+    async fetchProductsFromId(startId, iblockId, city = null) {
+        try {
+            let data = [];
+            let crmProducts = null;
+            const cityUserField = await this.getCityUserField();
+            if (city) {
+                const valueId = cityUserField.values.find(value => value.VALUE.toString().toLowerCase() === city.toString().toLowerCase()).ID;
+                if (valueId) {
+                    crmProducts = await this.getCrmProductsFromId(startId, valueId, cityUserField.key);
+                }
+            } else {
+                crmProducts = await this.getCrmProducts();
+            }
+
+            const offers = await this.fetchOffersFromId(startId, iblockId);
+
+
+            if (offers.length > 0) {
+                return offers.map(offer => {
+                    const product = crmProducts.find(product => product.ID.toString() === offer.parentId.value.toString());
+                    return {
+                        ID: product.ID.toString(),
+                        OFFER_ID: offer.id.toString(),
+                        NAME: product ? product.NAME : null,
+                        SECTION_ID: product ? product.SECTION_ID.toString() : null,
+                        QUANTITY: offer.quantity || 0,
+                        DESCRIPTION: product ? product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание" : "Тут будет описание"
+                    };
+                });
+            } else {
+                const quantities = await this.getQuantities();
+                crmProducts.forEach((product) => {
+                    const quantity = quantities.find((quantity) => quantity.productId.toString() === product.ID.toString());
+                    if (quantity) {
+                        data.push({
+                            ID: product.ID.toString(),
+                            NAME: product.NAME.toString(),
+                            QUANTITY: quantity.amount ? quantity.amount.toString() : 0 || 0,
+                            SECTION_ID: product.SECTION_ID.toString(),
+                            DESCRIPTION: product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание"
+                        });
+                    } else {
+                        data.push({
+                            ID: product.ID.toString(),
+                            NAME: product.NAME.toString(),
+                            QUANTITY: 0,
+                            SECTION_ID: product.SECTION_ID.toString(),
+                            DESCRIPTION: product.DESCRIPTION ? product.DESCRIPTION : "Тут будет описание"
+                        });
+                    }
+                })
+            }
+            return data;
+        } catch (error) {
+            logError("PRODUCTS SERVICE fetchProducts", error)
+            return null;
+        }
+    }
+
+    async getCrmProductsFromId(startId, valueId = null, key = null) {
+        let products = [];
+        let start = 0;
+        const batchSize = 50;
+        let fetchedCount = 0;
+        let total = 999999;
+
+        try {
+            while (fetchedCount < total) {
+                let response = null;
+                if (valueId && key && startId) {
+                    response = await this.bx.call("crm.product.list", {
+                        select: ["*"],
+                        filter: {
+                            ">ID": startId,
+                            [key]: valueId
+                        },
+                        start: start
+                    });
+                } else {
+                    response = await this.bx.call("crm.product.list", {
+                        select: ["*"],
+                        start: start
+                    });
+                }
+
+                response?.result?.forEach(product => {
+                    products.push( { "ID": product.ID, "NAME": product.NAME, "SECTION_ID": product.SECTION_ID } )
+                })
+
+                if (!response.result || response.result.length === 0 || response.next === undefined) {
+                    break; // Если больше нет товаров, завершаем цикл
+                }
+                fetchedCount += response.result.length;
+                // Увеличиваем смещение для следующей порции товаров
+                start += batchSize;
+                total = response.total;
+            }
+            return products;
+        } catch (error) {
+            logError("PRODUCTS SERVICE getCrmProductsFromId", error);
+            return null;
+        }
+    }
+
     async getCrmProducts(valueId = null, key= null) {
         let products = [];
         let start = 0;
@@ -136,6 +240,38 @@ class ProductsService {
                 const response = await this.bx.call("catalog.product.offer.list", {
                     select: ["id", "iblockId", "parentId", "quantity"],
                     filter: { iblockId: iblockId },
+                    start: start
+                });
+                if (!response.result || response.result.offers.length === 0) {
+                    break; // Если больше нет предложений, завершаем цикл
+                }
+
+                offers = offers.concat(response.result.offers);
+                fetchedCount += response.result.offers.length;
+                // Увеличиваем смещение для следующей порции предложений
+                start += batchSize;
+                total = response.total;
+            }
+
+            return offers;
+        } catch (error) {
+            logError("PRODUCT SERVICE getOffers", error);
+            return null;
+        }
+    }
+
+    async fetchOffersFromId(startId, iblockId) {
+        let offers = [];
+        let fetchedCount = 0;
+        let start = 0;
+        const batchSize = 50;
+        let total = 999999;
+
+        try {
+            while (fetchedCount < total) {
+                const response = await this.bx.call("catalog.product.offer.list", {
+                    select: ["id", "iblockId", "parentId", "quantity"],
+                    filter: { iblockId: iblockId, ">parentId": startId },
                     start: start
                 });
                 if (!response.result || response.result.offers.length === 0) {

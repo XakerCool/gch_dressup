@@ -51,7 +51,7 @@ const dbKaraganda = new Db(path.join(__dirname, 'db', 'karaganda', 'database.db'
 dbAstana.createTables();
 dbKaraganda.createTables();
 
-app.post("/dressup/get_goods", async (req, res) => {
+app.post("/dressup/get_goods_from_db_and_new_goods", async (req, res) => {
     try {
         const raw = req.body;
         const productService = new ProductsService(link);
@@ -61,6 +61,79 @@ app.post("/dressup/get_goods", async (req, res) => {
         const iblocks = await productService.getIblocksList();
         const offersCatalogId = await productService.getOffersCatalogId(iblocks);
 
+        let db;
+        if (raw.city.toLowerCase() === 'астана') {
+            db = dbAstana;
+        } else if (raw.city.toLowerCase() === 'караганда') {
+            db = dbKaraganda;
+        } else {
+            logError("/dressup/get_goods_from_db_and_new_goods", "неизвестный город!");
+            res.status(400).json({"status": false, "status_msg": "error", "message": "Введен несуществующий город"});
+        }
+
+
+        const maxProductIdFromDb = await db.getMaxProductIdFromDb();
+        const maxDealIdFromDb = await db.getMaxDealIdFromDb();
+        const maxContactIdFromDb = await db.getMaxContactIdFromDb();
+
+        let rawProducts = null;
+        if (raw && raw.city) {
+            rawProducts = await productService.fetchProductsFromId(maxProductIdFromDb, offersCatalogId, raw.city);
+        } else {
+            rawProducts = await productService.fetchProducts(offersCatalogId);
+        }
+
+        const dealsWithProductRows = await dealsService.getDealsWithProductrowsFromId(maxDealIdFromDb);
+        const contacts = await contactsService.getAllContactsFromId(maxContactIdFromDb);
+
+        rawProducts.forEach(product => {
+            const productsInDeals = [];
+
+            // Iterate over each deal in dealsWithProductRows
+            dealsWithProductRows.forEach(deal => {
+                // Find product rows that match the current productId
+                const matchingRows = deal.productRows.filter(row => row.PRODUCT_ID?.toString() === product.ID?.toString() || row.PRODUCT_ID?.toString() === product.OFFER_ID?.toString());
+
+                if (matchingRows.length > 0) {
+                    // If matching rows found, add deal details to productsInDeals
+                    productsInDeals.push({
+                        ID: deal.id,
+                        TITLE: deal.title,
+                        CONTACT: contacts.find(contact => contact.ID.toString() === deal.contact_id.toString()),
+                        BEGINDATE: deal.begin_date,
+                        CLOSEDATE: deal.close_date,
+                        STAGE_ID: deal.stage_id,
+                        WEDDING_DATE: deal.wedding_date
+                    });
+                }
+            });
+
+            // Add deals field to the product
+            product.deals = productsInDeals;
+        });
+
+        await db.insertDataIntoTables(rawProducts, contacts);
+
+        const productsFromDb = await db.getProductsAndDeals(raw.city);
+
+        rawProducts.push([...productsFromDb]);
+
+        res.status(200).json({ "status": true, "status_msg": "success", "products": rawProducts });
+    } catch (error) {
+        logError("/dressup/get_goods_from_db_and_new_goods", error);
+        res.status(500).json({ "status": false, "status_msg": "error", "message": "что-то пошло не так" });
+    }
+})
+
+app.post("/dressup/get_goods", async (req, res) => {
+    try {
+        const raw = req.body;
+        const productService = new ProductsService(link);
+        const dealsService = new DealsService(link);
+        const contactsService = new ContactsService(link);
+
+        const iblocks = await productService.getIblocksList();
+        const offersCatalogId = await productService.getOffersCatalogId(iblocks);
         let rawProducts = null;
         if (raw && raw.city) {
             rawProducts = await productService.fetchProducts(offersCatalogId, raw.city);
