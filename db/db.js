@@ -341,6 +341,47 @@ class Db {
             db.close();
         }
     }
+    async deleteProductFromDbByName(name) {
+        const db = new sqlite3.Database(this.dbPath);
+        try {
+            return new Promise((resolve, reject) => {
+                db.run(`DELETE FROM dresses WHERE name = ?`, [name], function(err) {
+                    if (err) {
+                        logError("DB SERVICE deleteProductFromDb", err);
+                        reject(err);
+                    } else {
+                        resolve({ success: true, message: `Product with ID ${name} has been deleted.` });
+                    }
+                });
+            });
+        } catch (error) {
+            logError("DB SERVICE deleteProductFromDb", error);
+            return null;
+        } finally {
+            db.close();
+        }
+    }
+
+    async getProductFromDb(productId) {
+        const db = new sqlite3.Database(this.dbPath);
+        try {
+            return new Promise((resolve, reject) => {
+                db.get(`SELECT * FROM dresses WHERE id = ?`, [productId], (err, row) => {
+                    if (err) {
+                        logError("DB SERVICE getProductFromDb", err);
+                        reject(err);
+                    } else {
+                        resolve(row);
+                    }
+                });
+            });
+        } catch (error) {
+            logError("DB SERVICE getProductFromDb", error);
+            return null;
+        } finally {
+            db.close();
+        }
+    }
 
     async updateProductInDb(productId, product) {
         const db = new sqlite3.Database(this.dbPath);
@@ -368,6 +409,32 @@ class Db {
             db.close();
         }
     }
+
+    async addProductToDb(product) {
+        const db = new sqlite3.Database(this.dbPath);
+        try {
+            return new Promise((resolve, reject) => {
+                db.run(
+                    `INSERT INTO dresses (id, name, description, quantity, section_id) VALUES (?, ?, ?, ?, ?)`,
+                    [product.ID, product.NAME, product.DESCRIPTION, product.QUANTITY, product.SECTION_ID],
+                    function(err) {
+                        if (err) {
+                            logError("DB SERVICE addProductToDb", err);
+                            reject(err);
+                        } else {
+                            resolve(true);
+                        }
+                    }
+                );
+            });
+        } catch (error) {
+            logError("DB SERVICE addProductToDb", error);
+            return null;
+        } finally {
+            db.close();
+        }
+    }
+
 
 }
 

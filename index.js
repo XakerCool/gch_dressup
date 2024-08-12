@@ -420,13 +420,36 @@ app.post("/dressup/update_product/", async (req, res) => {
 
         const productService = new ProductsService(link);
         const product = await productService.getCrmProduct(updatingProductId);
-        let db = dbAstana;
-        await db.updateProductInDb(updatingProductId, product);
-        db = dbKaraganda;
+        product.DESCRIPTION = product.DESCRIPTION.replace(/<[^>]*>/g, '');
+        const cities = await productService.getCityUserField();
+
+        let productFromDb = null;
+
+        const updatingProductSection = cities.values.find(city => city.ID.toString() === product[cities.key].value.toString());
+        let db = null;
+        if (updatingProductSection.VALUE.toLowerCase() === 'караганда') {
+            db = dbKaraganda;
+            productFromDb = await db.getProductFromDb(updatingProductId);
+            if (!productFromDb) {
+                db = dbAstana;
+                await db.deleteProductFromDb(updatingProductId);
+                db = dbKaraganda;
+                await db.addProductToDb(product)
+            }
+        } else if (updatingProductSection.VALUE.toLowerCase() === 'астана') {
+            db = dbAstana;
+            productFromDb = await db.getProductFromDb(updatingProductId);
+            if (!productFromDb) {
+                db = dbKaraganda;
+                await db.deleteProductFromDb(updatingProductId);
+                db = dbAstana;
+                await db.addProductToDb(product)
+            }
+        }
         await db.updateProductInDb(updatingProductId, product);
 
         logSuccess("/dressup/delete_product/", `Товар ${updatingProductId} успешно обновлен`)
-        res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${updatingProductId} успешно удален`});
+        res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${updatingProductId} успешно обновлен`});
     } catch (error) {
         logError("/dressup/delete_product/", error);
         res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
@@ -434,10 +457,8 @@ app.post("/dressup/update_product/", async (req, res) => {
 })
 
 app.get("/dressup/tmp", async (req, res) => {
-    let db = dbAstana;
-    await db.deleteProductFromDb(8433);
-    db = dbKaraganda;
-    await db.deleteProductFromDb(8433);
+    let db = dbKaraganda;
+    await db.deleteProductFromDbByName("тестовое платье");
     res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${8433} успешно удален`});
 })
 
