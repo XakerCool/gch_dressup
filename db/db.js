@@ -59,10 +59,12 @@ class Db {
 
         products.forEach(product => {
             insertProductStmt.run(product.ID, product.NAME, product.DESCRIPTION, product.QUANTITY, product.SECTION_ID);
-            product.deals?.forEach(deal => {
-                insertDealStmt.run(deal.ID, deal.TITLE, deal.CONTACT.ID, deal.BEGINDATE, deal.CLOSEDATE, deal.WEDDING_DATE, deal.STAGE_ID);
-                insertDressDealStmt.run(product.ID, deal.ID)
-            })
+            if (product.deals.length > 0) {
+                product.deals.forEach(deal => {
+                    insertDealStmt.run(deal.ID, deal.TITLE, deal.CONTACT.ID, deal.BEGINDATE, deal.CLOSEDATE, deal.WEDDING_DATE, deal.STAGE_ID);
+                    insertDressDealStmt.run(product.ID, deal.ID)
+                })
+            }
         });
         insertProductStmt.finalize();
         insertDressDealStmt.finalize();
