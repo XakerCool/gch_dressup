@@ -406,6 +406,7 @@ app.post("/dressup/delete_product/", async (req, res) => {
         db = dbKaraganda;
         await db.deleteProductFromDb(deletingProductId);
 
+        logSuccess("/dressup/delete_product/", `Товар ${deletingProductId} успешно удален`)
         res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${deletingProductId} успешно удален`});
     } catch (error) {
         logError("/dressup/delete_product/", error);
@@ -415,9 +416,9 @@ app.post("/dressup/delete_product/", async (req, res) => {
 
 app.get("/dressup/tmp", async (req, res) => {
     let db = dbAstana;
-    await db.deleteProductFromDb(8409);
+    await db.deleteProductFromDb(8429);
     db = dbKaraganda;
-    await db.deleteProductFromDb(8409);
+    await db.deleteProductFromDb(8429);
     res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${8409} успешно удален`});
 })
 
