@@ -95,7 +95,7 @@ class ProductsService {
                 }
 
                 response?.result?.forEach(product => {
-                    products.push( { "ID": product.ID, "NAME": product.NAME, "SECTION_ID": product.SECTION_ID } )
+                    products.push( { "ID": product.ID, "NAME": product.NAME, "SECTION_ID": product.SECTION_ID, "DESCRIPTION": product.DESCRIPTION } )
                 })
 
                 if (!response.result || response.result.length === 0 || response.next === undefined) {
