@@ -76,7 +76,9 @@ app.post("/dressup/get_goods_from_db_and_new_goods", async (req, res) => {
         const maxDealIdFromDb = await db.getMaxDealIdFromDb();
         const maxContactIdFromDb = await db.getMaxContactIdFromDb();
 
-        let rawProducts = null;
+        console.log(maxProductIdFromDb, maxDealIdFromDb, maxContactIdFromDb)
+
+        let rawProducts = [];
         if (raw && raw.city) {
             rawProducts = await productService.fetchProductsFromId(maxProductIdFromDb, offersCatalogId, raw.city);
         } else {
@@ -86,33 +88,36 @@ app.post("/dressup/get_goods_from_db_and_new_goods", async (req, res) => {
         const dealsWithProductRows = await dealsService.getDealsWithProductrowsFromId(maxDealIdFromDb);
         const contacts = await contactsService.getAllContactsFromId(maxContactIdFromDb);
 
-        rawProducts.forEach(product => {
-            const productsInDeals = [];
+        if (rawProducts) {
+            rawProducts.forEach(product => {
+                const productsInDeals = [];
 
-            // Iterate over each deal in dealsWithProductRows
-            dealsWithProductRows.forEach(deal => {
-                // Find product rows that match the current productId
-                const matchingRows = deal.productRows.filter(row => row.PRODUCT_ID?.toString() === product.ID?.toString() || row.PRODUCT_ID?.toString() === product.OFFER_ID?.toString());
+                // Iterate over each deal in dealsWithProductRows
+                dealsWithProductRows.forEach(deal => {
+                    // Find product rows that match the current productId
+                    const matchingRows = deal.productRows.filter(row => row.PRODUCT_ID?.toString() === product.ID?.toString() || row.PRODUCT_ID?.toString() === product.OFFER_ID?.toString());
 
-                if (matchingRows.length > 0) {
-                    // If matching rows found, add deal details to productsInDeals
-                    productsInDeals.push({
-                        ID: deal.id,
-                        TITLE: deal.title,
-                        CONTACT: contacts.find(contact => contact.ID.toString() === deal.contact_id.toString()),
-                        BEGINDATE: deal.begin_date,
-                        CLOSEDATE: deal.close_date,
-                        STAGE_ID: deal.stage_id,
-                        WEDDING_DATE: deal.wedding_date
-                    });
-                }
+                    if (matchingRows.length > 0) {
+                        // If matching rows found, add deal details to productsInDeals
+                        productsInDeals.push({
+                            ID: deal.id,
+                            TITLE: deal.title,
+                            CONTACT: contacts.find(contact => contact.ID.toString() === deal.contact_id.toString()),
+                            BEGINDATE: deal.begin_date,
+                            CLOSEDATE: deal.close_date,
+                            STAGE_ID: deal.stage_id,
+                            WEDDING_DATE: deal.wedding_date
+                        });
+                    }
+                });
+
+                // Add deals field to the product
+                product.deals = productsInDeals;
             });
+        }
 
-            // Add deals field to the product
-            product.deals = productsInDeals;
-        });
-
-        await db.insertDataIntoTables(rawProducts, contacts);
+        if (rawProducts.length > 0)
+            await db.insertDataIntoTables(rawProducts, contacts);
 
         const productsFromDb = await db.getProductsAndDeals(raw.city);
 
@@ -448,10 +453,36 @@ app.post("/dressup/update_product/", async (req, res) => {
         }
         await db.updateProductInDb(updatingProductId, product);
 
-        logSuccess("/dressup/delete_product/", `Товар ${updatingProductId} успешно обновлен`)
+        logSuccess("/dressup/update_product/", `Товар ${updatingProductId} успешно обновлен`)
         res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${updatingProductId} успешно обновлен`});
     } catch (error) {
-        logError("/dressup/delete_product/", error);
+        logError("/dressup/update_product/", error);
+        res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
+    }
+})
+
+app.post("/dressup/add_product/", async (req, res) => {
+    try {
+        const updatingProductId = req.body.data.FIELDS.ID;
+
+        const productService = new ProductsService(link);
+        const product = await productService.getCrmProduct(updatingProductId);
+        product.DESCRIPTION = product.DESCRIPTION.replace(/<[^>]*>/g, '');
+        const cities = await productService.getCityUserField();
+
+        const updatingProductSection = cities.values.find(city => city.ID.toString() === product[cities.key].value.toString());
+        let db = null;
+        if (updatingProductSection.VALUE.toLowerCase() === 'караганда') {
+            db = dbKaraganda;
+        } else if (updatingProductSection.VALUE.toLowerCase() === 'астана') {
+            db = dbAstana;
+        }
+        await db.addProductToDb(product);
+
+        logSuccess("/dressup/add_product/", `Товар ${updatingProductId} успешно добавлен`)
+        res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${updatingProductId} успешно добавлен`});
+    } catch (error) {
+        logError("/dressup/add_product/", error);
         res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
     }
 })
