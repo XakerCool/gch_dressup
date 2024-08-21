@@ -76,8 +76,6 @@ app.post("/dressup/get_goods_from_db_and_new_goods", async (req, res) => {
         const maxDealIdFromDb = await db.getMaxDealIdFromDb();
         const maxContactIdFromDb = await db.getMaxContactIdFromDb();
 
-        console.log(maxProductIdFromDb, maxDealIdFromDb, maxContactIdFromDb)
-
         let rawProducts = [];
         if (raw && raw.city) {
             rawProducts = await productService.fetchProductsFromId(maxProductIdFromDb, offersCatalogId, raw.city);
