@@ -441,7 +441,14 @@ class Db {
         const db = new sqlite3.Database(this.dbPath);
         try {
             return new Promise(async (resolve, reject) => {
-                await this.deleteRelationByDealId(dealId);
+                db.run(`DELETE FROM deal_dress WHERE deal_id = ?`, [dealId], function(err) {
+                    if (err) {
+                        logError("DB SERVICE deleteRelation", err);
+                        reject(err);
+                    } else {
+                        resolve({ success: true, message: `Relation with ID ${dealId} has been deleted.` });
+                    }
+                });
                 db.run(`DELETE FROM deals WHERE id = ?`, [dealId], function(err) {
                     if (err) {
                         logError("DB SERVICE deleteDealFromDb", err);
@@ -474,27 +481,6 @@ class Db {
             });
         } catch (error) {
             logError("DB SERVICE deleteContactFromDb", error);
-            return null;
-        } finally {
-            db.close();
-        }
-    }
-
-    async deleteRelationByDealId(dealId) {
-        const db = new sqlite3.Database(this.dbPath);
-        try {
-            return new Promise((resolve, reject) => {
-                db.run(`DELETE FROM deal_dress WHERE deal_id = ?`, [dealId], function(err) {
-                    if (err) {
-                        logError("DB SERVICE deleteRelation", err);
-                        reject(err);
-                    } else {
-                        resolve({ success: true, message: `Relation with ID ${dealId} has been deleted.` });
-                    }
-                });
-            });
-        } catch (error) {
-            logError("DB SERVICE deleteRelation", error);
             return null;
         } finally {
             db.close();
