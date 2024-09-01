@@ -491,7 +491,7 @@ app.post("/dressup/delete_deal", async (req, res) => {
         let db = dbAstana;
         await db.deleteDealFromDb(deletingDealId);
         db = dbKaraganda;
-        await db.deleteProductFromDb(deletingDealId);
+        await db.deleteDealFromDb(deletingDealId);
 
         logSuccess("/dressup/delete_product/", `Товар ${deletingDealId} успешно удален`)
         res.status(200).json({"status": true, "status_msg": "success", "message": `Deal with ID: ${deletingDealId} deleted`});
