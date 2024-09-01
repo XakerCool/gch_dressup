@@ -114,13 +114,11 @@ app.post("/dressup/get_goods_from_db_and_new_goods", async (req, res) => {
             });
         }
 
+        const productsFromDb = await db.getProductsAndDeals(raw.city);
+        rawProducts.push(...productsFromDb);
+
         if (rawProducts.length > 0)
             await db.insertDataIntoTables(rawProducts, contacts);
-
-        const productsFromDb = await db.getProductsAndDeals(raw.city);
-        console.log(productsFromDb.find(dress => dress.NAME.includes("КЗ")))
-
-        rawProducts.push(...productsFromDb);
 
         res.status(200).json({ "status": true, "status_msg": "success", "products": rawProducts });
     } catch (error) {
@@ -503,10 +501,29 @@ app.post("/dressup/delete_deal", async (req, res) => {
     }
 })
 
+app.post("/dressup/delete_contact", async (req, res) => {
+    try {
+        const deletingContactId = req.body.data.FIELDS.ID;
+
+        let db = dbAstana;
+        await db.deleteContactFromDb(deletingContactId);
+        db = dbKaraganda;
+        await db.deleteContactFromDb(deletingContactId);
+
+        logSuccess("/dressup/delete_contact/", `Контакт ${deletingContactId} успешно удален`)
+        res.status(200).json({"status": true, "status_msg": "success", "message": `Contact with ID: ${deletingContactId} deleted`});
+    } catch (error) {
+        logError("/dressup/delete_contact/", error);
+        res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
+    }
+})
+
 app.get("/dressup/tmp", async (req, res) => {
-    let db = dbKaraganda;
-    await db.deleteProductFromDbByName("тестовое платье");
-    res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${8433} успешно удален`});
+    let db = dbAstana;
+    // await db.deleteRelation(9);
+    // await db.deleteRelation(10);
+    // await db.deleteRelation(11);
+    res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${1} успешно удален`});
 })
 
 

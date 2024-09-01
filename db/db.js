@@ -19,6 +19,7 @@ class Db {
                 section_id INTEGER
             )`);
 
+
             db.run(`CREATE TABLE IF NOT EXISTS deals (
                 id TEXT PRIMARY KEY,
                 title TEXT,
@@ -44,6 +45,7 @@ class Db {
                 deal_id TEXT,
                 product_id TEXT
             )`);
+            db.run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_product_deal_unique ON deal_dress (product_id, deal_id);`)
         });
 
         db.close();
@@ -54,7 +56,7 @@ class Db {
 
         // Записываем продукты
         const insertProductStmt = db.prepare(`INSERT OR REPLACE INTO dresses (id, name, description, quantity, section_id) VALUES (?, ?, ?, ?, ?)`);
-        const insertDressDealStmt = db.prepare(`INSERT OR REPLACE INTO deal_dress (product_id, deal_id) VALUES(?, ?)`)
+        const insertDressDealStmt = db.prepare(`INSERT OR IGNORE INTO deal_dress (product_id, deal_id) VALUES(?, ?)`)
         const insertDealStmt = db.prepare(`INSERT OR REPLACE INTO deals (id, title, contact_id, begindate, closedate, weddingdate, stage_id) VALUES (?, ?, ?, ?, ?, ?, ?)`);
 
         products.forEach(product => {
@@ -168,7 +170,6 @@ class Db {
 
         try {
             const [dresses, deals, contacts, dealDressRelations] = await Promise.all([getDresses(), getDeals(), getContacts(), getDealDressRelations()]);
-
             dresses.forEach(dress => {
                 dress.deals = dealDressRelations
                     .filter(relation => relation.product_id === dress.ID)
@@ -439,7 +440,8 @@ class Db {
     async deleteDealFromDb(dealId) {
         const db = new sqlite3.Database(this.dbPath);
         try {
-            return new Promise((resolve, reject) => {
+            return new Promise(async (resolve, reject) => {
+                await this.deleteRelationByDealId(dealId);
                 db.run(`DELETE FROM deals WHERE id = ?`, [dealId], function(err) {
                     if (err) {
                         logError("DB SERVICE deleteDealFromDb", err);
@@ -457,6 +459,47 @@ class Db {
         }
     }
 
+    async deleteContactFromDb(contactId) {
+        const db = new sqlite3.Database(this.dbPath);
+        try {
+            return new Promise((resolve, reject) => {
+                db.run(`DELETE FROM contacts WHERE id = ?`, [contactId], function(err) {
+                    if (err) {
+                        logError("DB SERVICE deleteContactFromDb", err);
+                        reject(err);
+                    } else {
+                        resolve({ success: true, message: `Contact with ID ${contactId} has been deleted.` });
+                    }
+                });
+            });
+        } catch (error) {
+            logError("DB SERVICE deleteContactFromDb", error);
+            return null;
+        } finally {
+            db.close();
+        }
+    }
+
+    async deleteRelationByDealId(dealId) {
+        const db = new sqlite3.Database(this.dbPath);
+        try {
+            return new Promise((resolve, reject) => {
+                db.run(`DELETE FROM deal_dress WHERE deal_id = ?`, [dealId], function(err) {
+                    if (err) {
+                        logError("DB SERVICE deleteRelation", err);
+                        reject(err);
+                    } else {
+                        resolve({ success: true, message: `Relation with ID ${dealId} has been deleted.` });
+                    }
+                });
+            });
+        } catch (error) {
+            logError("DB SERVICE deleteRelation", error);
+            return null;
+        } finally {
+            db.close();
+        }
+    }
 }
 
 module.exports = Db;
