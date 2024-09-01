@@ -118,6 +118,7 @@ app.post("/dressup/get_goods_from_db_and_new_goods", async (req, res) => {
             await db.insertDataIntoTables(rawProducts, contacts);
 
         const productsFromDb = await db.getProductsAndDeals(raw.city);
+        console.log(productsFromDb.find(dress => dress.NAME.includes("КЗ")))
 
         rawProducts.push(...productsFromDb);
 
@@ -409,7 +410,7 @@ app.post("/dressup/delete_product/", async (req, res) => {
         db = dbKaraganda;
         await db.deleteProductFromDb(deletingProductId);
 
-        logSuccess("/dressup/delete_product/", `Товар ${deletingProductId} успешно удален`)
+        logSuccess("/dressup/delete_product/", `Product ${deletingProductId} deleted`)
         res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${deletingProductId} успешно удален`});
     } catch (error) {
         logError("/dressup/delete_product/", error);
@@ -481,6 +482,23 @@ app.post("/dressup/add_product/", async (req, res) => {
         res.status(200).json({"status": true, "status_msg": "success", "message": `Товар с ID: ${updatingProductId} успешно добавлен`});
     } catch (error) {
         logError("/dressup/add_product/", error);
+        res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
+    }
+})
+
+app.post("/dressup/delete_deal", async (req, res) => {
+    try {
+        const deletingDealId = req.body.data.FIELDS.ID;
+
+        let db = dbAstana;
+        await db.deleteDealFromDb(deletingDealId);
+        db = dbKaraganda;
+        await db.deleteProductFromDb(deletingDealId);
+
+        logSuccess("/dressup/delete_product/", `Товар ${deletingDealId} успешно удален`)
+        res.status(200).json({"status": true, "status_msg": "success", "message": `Deal with ID: ${deletingDealId} deleted`});
+    } catch (error) {
+        logError("/dressup/delete_product/", error);
         res.status(500).json({"status": false, "status_msg": "error", "message": "что-то пошло не так"})
     }
 })

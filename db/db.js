@@ -341,6 +341,7 @@ class Db {
             db.close();
         }
     }
+
     async deleteProductFromDbByName(name) {
         const db = new sqlite3.Database(this.dbPath);
         try {
@@ -435,6 +436,26 @@ class Db {
         }
     }
 
+    async deleteDealFromDb(dealId) {
+        const db = new sqlite3.Database(this.dbPath);
+        try {
+            return new Promise((resolve, reject) => {
+                db.run(`DELETE FROM deals WHERE id = ?`, [dealId], function(err) {
+                    if (err) {
+                        logError("DB SERVICE deleteDealFromDb", err);
+                        reject(err);
+                    } else {
+                        resolve({ success: true, message: `Deal with ID ${dealId} has been deleted.` });
+                    }
+                });
+            });
+        } catch (error) {
+            logError("DB SERVICE deleteDealFromDb", error);
+            return null;
+        } finally {
+            db.close();
+        }
+    }
 
 }
 
